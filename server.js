@@ -27,6 +27,10 @@ mongoose
 app.use("/notes", notesRoutes);
 app.use("/users", usersRoutes);
 app.use("/bans", bansRoutes);
+// test route
+app.get("/", (req, res) => {
+  res.send("Hello from Homepage");
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
