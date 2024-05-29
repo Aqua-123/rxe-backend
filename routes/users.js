@@ -4,15 +4,46 @@ import Moderator from "../models/Moderator.js";
 
 const router = express.Router();
 
+// Flag a user
 router.put("/flag/:userId", async (req, res) => {
   const { userId } = req.params;
-  const { moderatorId } = req.body;
-  try {
-    const user = await User.findById(userId);
-    const moderator = await Moderator.findById(moderatorId);
+  const {
+    moderatorId,
+    moderatorName,
+    moderatorEmeraldID,
+    userName,
+    userEmeraldID,
+  } = req.body;
 
-    if (!user || !moderator) {
-      return res.status(404).json({ message: "User or Moderator not found" });
+  try {
+    let user = await User.findById(userId);
+    if (!user) {
+      user = new User({
+        _id: userId,
+        username: userName,
+        name: userName,
+        emeraldID: userEmeraldID,
+        flagged: false,
+        flaggedBy: [],
+        notes: [],
+        bans: [],
+      });
+      await user.save();
+    }
+
+    let moderator = await Moderator.findById(moderatorId);
+    if (!moderator) {
+      moderator = new Moderator({
+        _id: moderatorId,
+        username: moderatorName,
+        name: moderatorName,
+        emeraldID: moderatorEmeraldID,
+        mod: true,
+        master: false,
+        notes: [],
+        bans: [],
+      });
+      await moderator.save();
     }
 
     user.flagged = true;
@@ -27,6 +58,7 @@ router.put("/flag/:userId", async (req, res) => {
   }
 });
 
+// Get all flagged users with moderator details
 router.get("/flagged", async (req, res) => {
   try {
     const users = await User.find({ flagged: true }).populate(

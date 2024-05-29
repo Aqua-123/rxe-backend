@@ -3,6 +3,7 @@ import express from "express";
 import mongoose from "mongoose";
 import notesRoutes from "./routes/notes.js";
 import usersRoutes from "./routes/users.js";
+import bansRoutes from "./routes/bans.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ mongoose
 
 app.use("/notes", notesRoutes);
 app.use("/users", usersRoutes);
+app.use("/bans", bansRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -1,11 +1,11 @@
 import express from "express";
-import Note from "../models/Note.js";
+import Ban from "../models/Ban.js";
 import User from "../models/User.js";
 import Moderator from "../models/Moderator.js";
 
 const router = express.Router();
 
-// Create a new note
+// Create a new ban
 router.post("/", async (req, res) => {
   const {
     userId,
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
     moderatorId,
     moderatorName,
     moderatorEmeraldID,
-    note,
+    duration,
   } = req.body;
   try {
     let user = await User.findById(userId);
@@ -47,61 +47,65 @@ router.post("/", async (req, res) => {
       await moderator.save();
     }
 
-    const newNote = new Note({
+    const newBan = new Ban({
       userId,
       moderatorId,
-      note,
+      moderatorName,
+      duration,
     });
-    const savedNote = await newNote.save();
+    const savedBan = await newBan.save();
 
     // Update references
-    user.notes.push(savedNote._id);
-    moderator.notes.push(savedNote._id);
+    user.bans.push(savedBan._id);
+    moderator.bans.push(savedBan._id);
     await user.save();
     await moderator.save();
 
-    res.status(201).json(savedNote);
+    res.status(201).json(savedBan);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-// Edit a note
-router.put("/:id", async (req, res) => {
-  const { id } = req.params;
-  const { note } = req.body;
-  try {
-    const updatedNote = await Note.findByIdAndUpdate(
-      id,
-      { note },
-      { new: true }
-    );
-    res.json(updatedNote);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Get all notes for a user
+// Get ban details for a user
 router.get("/user/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
-    const notes = await Note.find({ userId }).populate("moderatorId", "name");
-    res.json(notes);
+    const bans = await Ban.find({ userId }).populate("moderatorId", "name");
+    const activeBans = bans
+      .filter((ban) => {
+        const banEndTime = new Date(
+          ban.startTime.getTime() + ban.duration * 60000
+        );
+        return new Date() < banEndTime;
+      })
+      .map((ban) => ({
+        ...ban.toObject(),
+        timeRemaining: Math.max(
+          0,
+          Math.round(
+            (ban.startTime.getTime() + ban.duration * 60000 - Date.now()) /
+              60000
+          )
+        ), // time remaining in minutes
+      }));
+
+    if (activeBans.length > 0) {
+      res.json({ active: true, bans: activeBans });
+    } else {
+      res.json({ active: false, bans: [] });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-// Get all notes by a moderator
+// Get all bans by a moderator
 router.get("/moderator/:moderatorId", async (req, res) => {
   const { moderatorId } = req.params;
   try {
-    const notes = await Note.find({ moderatorId }).populate(
-      "userId",
-      "username"
-    );
-    res.json(notes);
+    const bans = await Ban.find({ moderatorId }).populate("userId", "username");
+    res.json(bans);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
