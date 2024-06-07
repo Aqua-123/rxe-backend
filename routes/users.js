@@ -4,7 +4,6 @@ import Moderator from "../models/Moderator.js";
 
 const router = express.Router();
 
-// Flag a user
 router.put("/flag/:userId", async (req, res) => {
   const { userId } = req.params;
   const {

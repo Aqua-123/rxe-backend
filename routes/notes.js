@@ -6,7 +6,7 @@ import Moderator from "../models/Moderator.js";
 const router = express.Router();
 
 // Create a new note
-router.post("/", async (req, res) => {
+router.post("/create", async (req, res) => {
   const {
     userId,
     userName,
